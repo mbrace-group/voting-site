@@ -35,18 +35,14 @@ button{font:inherit;text-transform:uppercase;letter-spacing:.28em;font-size:14px
 </style></head><body><div class="top">Official Vote</div>
 <main>
 
-<section id="join">
-  <div class="pill">Live voting</div>
-  <h1>Vote</h1>
-  <p>Scan the code to open the ballot and vote</p>
-  <div class="dv"><i></i></div>
-  <div class="card"><div id="qr"></div><p class="note" style="text-align:center;margin:0">Show this QR on a screen so others can scan it</p></div>
-  <button class="btn" id="enter">Open ballot</button>
-</section>
+<div class="pill">Live voting</div>
+<h1>Vote</h1>
+<div class="card"><div id="qr"></div><p class="note" style="text-align:center;margin:0">Scan to vote on your own phone</p></div>
+<div class="dv"><i></i></div>
 
 <section id="ballot" hidden>
-  <div class="pill">Step 2 of 2</div>
-  <h1>Your vote</h1>
+  
+  <h1 style="font-size:30px">Choose one</h1>
   <p>One vote per device. Final once submitted</p>
   <div class="dv"><i></i></div>
   <div id="cands"></div>
@@ -54,8 +50,7 @@ button{font:inherit;text-transform:uppercase;letter-spacing:.28em;font-size:14px
 </section>
 
 <section id="done" hidden>
-  <div class="pill">Thank you</div>
-  <h1>Recorded</h1>
+  <h1 style="font-size:30px">Vote recorded</h1>
   <p id="mine"></p>
   <div class="dv"><i></i></div>
   <div class="card" id="results"></div>
@@ -67,11 +62,12 @@ const CANDIDATES=["Ana Silva","Bruno Costa","Carla Mendes","Diego Rocha"]; // ed
 const $=id=>document.getElementById(id);
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
 let dev=ls.get("dev"); if(!dev){dev=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now()); ls.set("dev",dev);}
+const VOTE_URL="https://mbrace-group.github.io/voting-site/"; // address the QR code opens
 let choice=null, db=null, counts={};
 
-try{new QRCode($("qr"),{text:location.origin+location.pathname+"?vote=1",width:180,height:180});}catch(e){$("qr").textContent="QR unavailable";}
+try{new QRCode($("qr"),{text:VOTE_URL,width:180,height:180});}catch(e){$("qr").textContent="QR unavailable";}
 
-function show(id){["join","ballot","done"].forEach(s=>$(s).hidden=s!==id);}
+function show(id){["ballot","done"].forEach(s=>$(s).hidden=s!==id);}
 function renderResults(){
   const total=Object.values(counts).reduce((a,b)=>a+b,0);
   $("results").innerHTML=CANDIDATES.map(c=>{const n=counts[c]||0,p=total?Math.round(n/total*100):0;
@@ -96,7 +92,6 @@ CANDIDATES.forEach((c,i)=>{
   b.onclick=()=>{choice=c;[...$("cands").children].forEach(x=>x.classList.remove("sel"));b.classList.add("sel");$("submit").disabled=false;};
   $("cands").appendChild(b);
 });
-$("enter").onclick=()=>{location.href=location.origin+location.pathname+"?vote=1";};
 $("submit").onclick=async()=>{
   if(!choice||ls.get("voted"))return;
   $("submit").disabled=true;
@@ -109,6 +104,6 @@ $("submit").onclick=async()=>{
   const firebaseConfig={apiKey:"AIzaSyDWRr6LlNrNEjWg3XnpduvPqxeXisje7Fk",authDomain:"mbrace-group-voting.firebaseapp.com",projectId:"mbrace-group-voting",storageBucket:"mbrace-group-voting.firebasestorage.app",messagingSenderId:"1091178924268",appId:"1:1091178924268:web:c7c5329c8ec055df3d3dc9"};
   if(!firebaseConfig.apiKey.startsWith("PASTE")){ firebase.initializeApp(firebaseConfig); db=firebase.firestore(); listen(); }
 }catch(e){}
-  if(new URLSearchParams(location.search).has("vote")){ if(ls.get("voted")) showDone(ls.get("voted")); else show("ballot"); } else show("join");
+  if(ls.get("voted")) showDone(ls.get("voted")); else show("ballot");
 })();
 </script></main></body></html>
