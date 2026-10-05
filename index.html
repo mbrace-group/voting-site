@@ -47,6 +47,7 @@ button{font:inherit;text-transform:uppercase;letter-spacing:.28em;font-size:14px
   <div class="dv"><i></i></div>
   <div id="cands"></div>
   <button class="btn" id="submit" disabled>Submit vote</button>
+  <p class="note" id="err" style="color:#e0b24a;margin-top:14px"></p>
 </section>
 
 <section id="done" hidden>
@@ -94,16 +95,20 @@ CANDIDATES.forEach((c,i)=>{
 });
 $("submit").onclick=async()=>{
   if(!choice||ls.get("voted"))return;
-  $("submit").disabled=true;
+  const err=m=>{$("err").textContent=m;$("submit").disabled=false;};
+  $("err").textContent="";$("submit").disabled=true;
+  if(!db){err("Not connected to the database"+(window.initErr?": "+window.initErr:"")+". Reload and try again.");return;}
+  try{
+    await Promise.race([db.doc("votes/"+dev).set({candidate:choice,t:Date.now()}),new Promise((_,r)=>setTimeout(()=>r(new Error("timeout - check internet / Firestore")),10000))]);
+  }catch(e){err("Vote NOT saved: "+(e.code||e.message));return;}
   ls.set("voted",choice);
-  if(db){try{await db.doc("votes/"+dev).set({candidate:choice,t:Date.now()});}catch(e){}}
   showDone(choice);
 };
 (async()=>{
   try{
   const firebaseConfig={apiKey:"AIzaSyDWRr6LlNrNEjWg3XnpduvPqxeXisje7Fk",authDomain:"mbrace-group-voting.firebaseapp.com",projectId:"mbrace-group-voting",storageBucket:"mbrace-group-voting.firebasestorage.app",messagingSenderId:"1091178924268",appId:"1:1091178924268:web:c7c5329c8ec055df3d3dc9"};
   if(!firebaseConfig.apiKey.startsWith("PASTE")){ firebase.initializeApp(firebaseConfig); db=firebase.firestore(); listen(); }
-}catch(e){}
+}catch(e){window.initErr=String(e.message||e);}
   if(ls.get("voted")) showDone(ls.get("voted")); else show("ballot");
 })();
 </script></main></body></html>
