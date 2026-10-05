@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400&display=swap">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vote</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#000;--ink:#fff;--mute:#b9b2a2;--bronze:#6b4a14;--gold:#b8862b;--gold2:#8a6420;--dark:#101010;--line:#2a2110}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:radial-gradient(90% 50% at 50% 30%,rgba(120,80,20,.28),transparent 70%),#000;background-color:#000;color:var(--ink);font:300 15px/1.6 "Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;text-transform:uppercase;letter-spacing:.18em;min-height:100vh;text-align:center}
+.top{background:#000;border-bottom:2px solid var(--bronze);padding:22px 16px;font-size:13px;letter-spacing:.45em;font-weight:400}
+main{max-width:480px;margin:16px auto;padding:40px 22px 44px;box-shadow:inset 0 0 0 6px #000,inset 0 0 0 7px var(--bronze),0 0 0 1px var(--bronze);background:rgba(0,0,0,.55)}
+.pill{display:block;margin:0 auto 34px;padding:20px 12px;border-radius:18px;background:linear-gradient(180deg,#8a6420 0%,#2b1d08 70%,#0b0803 100%);font-size:14px;letter-spacing:.3em;font-weight:400}
+h1{font-size:44px;line-height:1.1;margin:0 0 18px;font-weight:300;letter-spacing:.22em}
+p{color:var(--ink);margin:0 0 22px;font-size:13px;letter-spacing:.2em;line-height:1.9}
+.dv{display:flex;align-items:center;gap:10px;margin:8px 0 28px}
+.dv::before,.dv::after{content:"";flex:1;height:1px;background:var(--gold2)}
+.dv i{width:7px;height:7px;background:var(--gold);transform:rotate(45deg)}
+.card{background:var(--dark);border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:18px}
+button{font:inherit;text-transform:uppercase;letter-spacing:.28em;font-size:14px;cursor:pointer}
+.btn{width:100%;padding:20px 12px;border:0;border-radius:18px;color:#fff;background:linear-gradient(180deg,#8a6420 0%,#2b1d08 75%,#0b0803 100%);transition:transform .15s,opacity .2s}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.cand{display:block;width:100%;background:var(--dark);color:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 12px;margin-bottom:14px;transition:all .2s}
+.cand .av{display:none}
+.cand.sel{border-color:var(--gold);background:linear-gradient(180deg,#8a6420 0%,#2b1d08 75%,#0b0803 100%)}
+#qr{display:grid;place-items:center;padding:12px;background:#fff;border-radius:14px;width:fit-content;margin:0 auto 16px;border:3px solid var(--gold)}
+.bar{height:6px;border-radius:6px;background:#1c1608;overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold2),#e0b24a)}
+.row{display:flex;justify-content:space-between;font-size:13px}.row span:last-child{color:#e0b24a}
+.note{font-size:11px;color:var(--mute);letter-spacing:.16em;margin:0}
+[hidden]{display:none!important}
+</style></head><body><div class="top">Official Vote</div>
+<main>
+
+<section id="join">
+  <div class="pill">Live voting</div>
+  <h1>Vote</h1>
+  <p>Scan the code to join, then cast your one vote</p>
+  <div class="dv"><i></i></div>
+  <div class="card"><div id="qr"></div><p class="note" style="text-align:center;margin:0">Show this QR on a screen so others can scan it</p></div>
+  <button class="btn" id="enter">Enter &amp; vote</button>
+</section>
+
+<section id="ballot" hidden>
+  <div class="pill">Step 2 of 2</div>
+  <h1>Your vote</h1>
+  <p>One vote per device. Final once submitted</p>
+  <div class="dv"><i></i></div>
+  <div id="cands"></div>
+  <button class="btn" id="submit" disabled>Submit vote</button>
+</section>
+
+<section id="done" hidden>
+  <div class="pill">Thank you</div>
+  <h1>Recorded</h1>
+  <p id="mine"></p>
+  <div class="dv"><i></i></div>
+  <div class="card" id="results"></div>
+  <p class="note" id="live"></p>
+</section>
+
+<script>
+const CANDIDATES=["Ana Silva","Bruno Costa","Carla Mendes","Diego Rocha"]; // edit names here
+const $=id=>document.getElementById(id);
+const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+let dev=ls.get("dev"); if(!dev){dev=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now()); ls.set("dev",dev);}
+let choice=null, db=null, counts={};
+
+try{new QRCode($("qr"),{text:location.href,width:180,height:180});}catch(e){$("qr").textContent="QR unavailable";}
+
+function show(id){["join","ballot","done"].forEach(s=>$(s).hidden=s!==id);}
+function renderResults(){
+  const total=Object.values(counts).reduce((a,b)=>a+b,0);
+  $("results").innerHTML=CANDIDATES.map(c=>{const n=counts[c]||0,p=total?Math.round(n/total*100):0;
+    return `<div style="margin-bottom:12px"><div class="row"><span></span><span>${n} · ${p}%</span></div><div class="bar"><i style="width:${p}%"></i></div></div>`}).join("");
+  [...$("results").querySelectorAll(".row span:first-child")].forEach((s,i)=>s.textContent=CANDIDATES[i]);
+}
+function showDone(c){
+  $("mine").textContent="You voted for "+c+".";
+  show("done"); renderResults();
+  $("live").textContent=db?"Live results from everyone who has voted.":"Showing your device's vote only (shared results need a signed-in viewer).";
+  if(!counts[c]&&!db) counts[c]=1, renderResults();
+}
+function listen(){
+  if(!db) return;
+  db.collection("votes").onSnapshot(s=>{counts={};s.docs.forEach(d=>{const v=d.data();if(v&&v.candidate)counts[v.candidate]=(counts[v.candidate]||0)+1;});
+    if(!$("done").hidden) renderResults();},()=>{});
+}
+CANDIDATES.forEach((c,i)=>{
+  const b=document.createElement("button");b.className="cand";
+  const av=document.createElement("div");av.className="av";av.textContent=c[0];
+  const t=document.createElement("span");t.textContent=c;b.append(av,t);
+  b.onclick=()=>{choice=c;[...$("cands").children].forEach(x=>x.classList.remove("sel"));b.classList.add("sel");$("submit").disabled=false;};
+  $("cands").appendChild(b);
+});
+$("enter").onclick=()=>{const v=ls.get("voted");v?showDone(v):show("ballot");};
+$("submit").onclick=async()=>{
+  if(!choice||ls.get("voted"))return;
+  $("submit").disabled=true;
+  ls.set("voted",choice);
+  if(db){try{await db.doc("votes/"+dev).set({candidate:choice,t:Date.now()});}catch(e){}}
+  showDone(choice);
+};
+(async()=>{
+  try{ if(window.claude&&claude.use){ db=await claude.use("db"); listen(); } }catch(e){}
+  if(ls.get("voted")&&new URLSearchParams(location.search).has("results")) showDone(ls.get("voted"));
+})();
+</script></main></body></html>
