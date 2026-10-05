@@ -35,7 +35,7 @@ button{font:inherit;text-transform:uppercase;letter-spacing:.28em;font-size:14px
 </style></head><body><div class="top">Official Vote</div>
 <main>
 
-<section id="join" hidden>
+<section id="join">
   <div class="pill">Live voting</div>
   <h1>Vote</h1>
   <p>Scan the code to open the ballot and vote</p>
@@ -44,7 +44,7 @@ button{font:inherit;text-transform:uppercase;letter-spacing:.28em;font-size:14px
   <button class="btn" id="enter">Open ballot</button>
 </section>
 
-<section id="ballot">
+<section id="ballot" hidden>
   <div class="pill">Step 2 of 2</div>
   <h1>Your vote</h1>
   <p>One vote per device. Final once submitted</p>
@@ -69,7 +69,7 @@ const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:
 let dev=ls.get("dev"); if(!dev){dev=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now()); ls.set("dev",dev);}
 let choice=null, db=null, counts={};
 
-try{new QRCode($("qr"),{text:location.origin+location.pathname,width:180,height:180});}catch(e){$("qr").textContent="QR unavailable";}
+try{new QRCode($("qr"),{text:location.origin+location.pathname+"?vote=1",width:180,height:180});}catch(e){$("qr").textContent="QR unavailable";}
 
 function show(id){["join","ballot","done"].forEach(s=>$(s).hidden=s!==id);}
 function renderResults(){
@@ -96,7 +96,7 @@ CANDIDATES.forEach((c,i)=>{
   b.onclick=()=>{choice=c;[...$("cands").children].forEach(x=>x.classList.remove("sel"));b.classList.add("sel");$("submit").disabled=false;};
   $("cands").appendChild(b);
 });
-$("enter").onclick=()=>{location.href=location.origin+location.pathname;};
+$("enter").onclick=()=>{location.href=location.origin+location.pathname+"?vote=1";};
 $("submit").onclick=async()=>{
   if(!choice||ls.get("voted"))return;
   $("submit").disabled=true;
@@ -109,6 +109,6 @@ $("submit").onclick=async()=>{
   const firebaseConfig={apiKey:"AIzaSyDWRr6LlNrNEjWg3XnpduvPqxeXisje7Fk",authDomain:"mbrace-group-voting.firebaseapp.com",projectId:"mbrace-group-voting",storageBucket:"mbrace-group-voting.firebasestorage.app",messagingSenderId:"1091178924268",appId:"1:1091178924268:web:c7c5329c8ec055df3d3dc9"};
   if(!firebaseConfig.apiKey.startsWith("PASTE")){ firebase.initializeApp(firebaseConfig); db=firebase.firestore(); listen(); }
 }catch(e){}
-  if(new URLSearchParams(location.search).has("qr")) show("join"); else if(ls.get("voted")) showDone(ls.get("voted")); else show("ballot");
+  if(new URLSearchParams(location.search).has("vote")){ if(ls.get("voted")) showDone(ls.get("voted")); else show("ballot"); } else show("join");
 })();
 </script></main></body></html>
