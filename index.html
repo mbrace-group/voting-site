@@ -4,6 +4,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Vote</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 --bg:#000;--ink:#fff;--mute:#b9b2a2;--bronze:#6b4a14;--gold:#b8862b;--gold2:#8a6420;--dark:#101010;--line:#2a2110}
@@ -79,7 +81,7 @@ function renderResults(){
 function showDone(c){
   $("mine").textContent="You voted for "+c+".";
   show("done"); renderResults();
-  $("live").textContent=db?"Live results from everyone who has voted.":"Showing your device's vote only (shared results need a signed-in viewer).";
+  $("live").textContent=db?"Live results from everyone who has voted.":"Results are not connected yet.";
   if(!counts[c]&&!db) counts[c]=1, renderResults();
 }
 function listen(){
@@ -103,7 +105,10 @@ $("submit").onclick=async()=>{
   showDone(choice);
 };
 (async()=>{
-  try{ if(window.claude&&claude.use){ db=await claude.use("db"); listen(); } }catch(e){}
-  if(ls.get("voted")&&new URLSearchParams(location.search).has("results")) showDone(ls.get("voted"));
+  try{
+  const firebaseConfig={apiKey:"AIzaSyDWRr6LlNrNEjWg3XnpduvPqxeXisje7Fk",authDomain:"mbrace-group-voting.firebaseapp.com",projectId:"mbrace-group-voting",storageBucket:"mbrace-group-voting.firebasestorage.app",messagingSenderId:"1091178924268",appId:"1:1091178924268:web:c7c5329c8ec055df3d3dc9"};
+  if(!firebaseConfig.apiKey.startsWith("PASTE")){ firebase.initializeApp(firebaseConfig); db=firebase.firestore(); listen(); }
+}catch(e){}
+  if(ls.get("voted")) showDone(ls.get("voted"));
 })();
 </script></main></body></html>
