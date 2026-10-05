@@ -35,10 +35,13 @@ button{font:inherit;text-transform:uppercase;letter-spacing:.28em;font-size:14px
 </style></head><body><div class="top">Official Vote</div>
 <main>
 
+<section id="join">
 <div class="pill">Live voting</div>
 <h1>Vote</h1>
 <div class="card"><div id="qr"></div><p class="note" style="text-align:center;margin:0">Scan to vote on your own phone</p></div>
 <div class="dv"><i></i></div>
+<button class="btn" id="enter">Vote now</button>
+</section>
 
 <section id="ballot" hidden>
   
@@ -56,6 +59,7 @@ button{font:inherit;text-transform:uppercase;letter-spacing:.28em;font-size:14px
   <div class="dv"><i></i></div>
   <div class="card" id="results"></div>
   <p class="note" id="live"></p>
+  <button class="btn" id="back" style="margin-top:16px">Show QR code</button>
 </section>
 
 <script>
@@ -68,14 +72,17 @@ let choice=null, db=null, counts={};
 
 try{new QRCode($("qr"),{text:VOTE_URL,width:180,height:180});}catch(e){$("qr").textContent="QR unavailable";}
 
-function show(id){["ballot","done"].forEach(s=>$(s).hidden=s!==id);}
+function show(id){["join","ballot","done"].forEach(s=>$(s).hidden=s!==id);}
 function renderResults(){
   const total=Object.values(counts).reduce((a,b)=>a+b,0);
   $("results").innerHTML=CANDIDATES.map(c=>{const n=counts[c]||0,p=total?Math.round(n/total*100):0;
     return `<div style="margin-bottom:12px"><div class="row"><span></span><span>${n} · ${p}%</span></div><div class="bar"><i style="width:${p}%"></i></div></div>`}).join("");
   [...$("results").querySelectorAll(".row span:first-child")].forEach((s,i)=>s.textContent=CANDIDATES[i]);
 }
+$("enter").onclick=()=>{const v=ls.get("voted");v?showDone(v):show("ballot");};
+$("back").onclick=()=>show("join");
 function showDone(c){
+  $("enter").textContent="See live results";
   $("mine").textContent="You voted for "+c+".";
   show("done"); renderResults();
   $("live").textContent=db?"Live votes · updates automatically":"Results are not connected yet.";
@@ -109,6 +116,6 @@ $("submit").onclick=async()=>{
   const firebaseConfig={apiKey:"AIzaSyDWRr6LlNrNEjWg3XnpduvPqxeXisje7Fk",authDomain:"mbrace-group-voting.firebaseapp.com",projectId:"mbrace-group-voting",storageBucket:"mbrace-group-voting.firebasestorage.app",messagingSenderId:"1091178924268",appId:"1:1091178924268:web:c7c5329c8ec055df3d3dc9"};
   if(!firebaseConfig.apiKey.startsWith("PASTE")){ firebase.initializeApp(firebaseConfig); db=firebase.firestore(); listen(); }
 }catch(e){window.initErr=String(e.message||e);}
-  if(ls.get("voted")) showDone(ls.get("voted")); else show("ballot");
+  if(ls.get("voted")) $("enter").textContent="See live results"; show("join");
 })();
 </script></main></body></html>
